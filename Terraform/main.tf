@@ -10,13 +10,6 @@ resource "aws_subnet" "publicsub1" {
   availability_zone       = "us-east-1a"
 }
 
-resource "aws_subnet" "publicsub2" {
-  vpc_id                  = aws_vpc.PR1_vpc.id
-  cidr_block              = "10.0.1.0/24"
-  map_public_ip_on_launch = true
-  availability_zone       = "us-east-1b"
-}
-
 resource "aws_internet_gateway" "PR1_IGW" {
   vpc_id = aws_vpc.PR1_vpc.id
 }
@@ -40,10 +33,6 @@ resource "aws_route_table_association" "PR1_rta1" {
   subnet_id      = aws_subnet.publicsub2.id
 }
 
-resource "aws_route_table_association" "PR1_rta2" {
-  route_table_id = aws_route_table.PR1_RT.id
-  subnet_id      = aws_subnet.publicsub1.id
-}
 
 resource "aws_security_group" "PR1_SG" {
   name        = "web-sg"
@@ -80,19 +69,6 @@ resource "aws_security_group_rule" "example" {
   cidr_blocks       = ["0.0.0.0/0"]
 }
 
-resource "aws_s3_bucket" "PR1" {
-  bucket = "terraformbucket-test-456"
-
-}
-
-resource "aws_s3_bucket_public_access_block" "false" {
-  bucket = aws_s3_bucket.PR1.id
-
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-}
 
 resource "aws_key_pair" "PR1_KP" {
   key_name   = "Webserver-KP"
@@ -137,64 +113,3 @@ resource "aws_instance" "PR1_WebServer2" {
 #Application Load balancer
 
 
-resource "aws_alb" "PR1_alb" {
-  name               = "ProjectLB"
-  load_balancer_type = "application"
-  internal           = false
-  security_groups = [ aws_security_group.PR1_SG.id ]
-
-  subnet_mapping {
-    subnet_id = aws_subnet.publicsub1.id
-  }
-
-  subnet_mapping {
-    subnet_id = aws_subnet.publicsub2.id
-  }
-}
-
-# Target group
-
-resource "aws_lb_target_group" "TG" {
-  name     = "ProjectTG"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.PR1_vpc.id
-  health_check {
-    path = "/"
-    port = "traffic-port"
-  }
-}
-
-# Attaching ex2 instances to target groups
-
-resource "aws_lb_target_group_attachment" "TGA1" {
-  target_group_arn = aws_lb_target_group.TG.arn
-  target_id        = aws_instance.PR1_WebServer1.id
-  port             = 80
-}
-
-resource "aws_lb_target_group_attachment" "TGA2" {
-  target_group_arn = aws_lb_target_group.TG.arn
-  target_id        = aws_instance.PR1_WebServer2.id
-  port             = 80
-}
-
-# Listener configuration
-
-resource "aws_alb_listener" "Web" {
-  load_balancer_arn = aws_alb.PR1_alb.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.TG.arn
-
-  }
-}
-
-output "LoadBalancerDNS" {
-  value = aws_alb.PR1_alb.dns_name
-
-}
