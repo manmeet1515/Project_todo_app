@@ -1,15 +1,12 @@
-FROM ubuntu
+FROM ubuntu:latest
+
 LABEL maintainer="manmeet1515@gmail.com"
 
-WORKDIR /usr/share/nginx/html
-RUN apt-get -y update && apt-get -y install nginx
+RUN apt-get update && apt-get install -y apache2
 
-COPY ./default /etc/nginx/sites-available/default
-COPY index.html index.html
-COPY style.css style.css
-COPY script.js script.js
+COPY Frontend /var/www/html/
 
-CMD ["/usr/sbin/nginx", "-g", "daemon off;"] 
+ENTRYPOINT ["httpd", "-D", "FOREGROUND"]
 
 EXPOSE 80
 
