@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y apache2
 
 COPY Frontend /var/www/html/
 
-ENTRYPOINT ["httpd", "-D", "FOREGROUND"]
+CMD ["apache2ctl", "-D", "FOREGROUND"]
 
 EXPOSE 80
 
