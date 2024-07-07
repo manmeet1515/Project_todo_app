@@ -83,13 +83,13 @@ resource "aws_instance" "App_server" {
   vpc_security_group_ids = [aws_security_group.PR_SG.id]
   key_name               = aws_key_pair.PR_KP.key_name
 
-  /*user_data = <<-EOL
+  user_data = <<-EOL
   #!/bin/bash -xe
-
-  sudo apt update -y
-  sudo apt install docker -y
+  sudo yum update -y
+  sudo amazon-linux-extras install docker -y
+  sudo service docker start
   sudo usermod -a -G docker ec2-user
-  EOL*/
+  EOL
 
 }
 
