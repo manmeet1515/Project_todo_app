@@ -10,12 +10,12 @@ resource "aws_subnet" "publicsubnet" {
   availability_zone       = "us-east-1a"
 }
 
-resource "aws_internet_gateway" "Project_IGW" {
+resource "aws_internet_gateway" "Pro_IGW" {
   vpc_id = aws_vpc.Project_vpc.id
 }
 
-resource "aws_internet_gateway_attachment" "example" {
-  internet_gateway_id = aws_internet_gateway.Project_IGW.id
+resource "aws_internet_gateway_attachment" "Attachment" {
+  internet_gateway_id = aws_internet_gateway.Pro_IGW.id
   vpc_id              = aws_vpc.Project_vpc.id
 }
 
@@ -24,7 +24,7 @@ resource "aws_route_table" "Project_RT" {
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.Project_IGW.id
+    gateway_id = aws_internet_gateway.Pro_IGW.id
   }
 }
 
@@ -70,7 +70,7 @@ resource "aws_security_group_rule" "example" {
 }
 
 
-resource "aws_key_pair" "PR_KP" {
+resource "aws_key_pair" "Pro_KP" {
   key_name   = "Webserver-KP"
   public_key = file("~/.ssh/id_rsa.pub")
 }
@@ -81,7 +81,8 @@ resource "aws_instance" "App_server" {
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.publicsubnet.id
   vpc_security_group_ids = [aws_security_group.PR_SG.id]
-  key_name               = aws_key_pair.PR_KP.key_name
+  key_name               = aws_key_pair.Pro_KP.key_name
+  iam_instance_profile   = aws_iam_instance_profile.profile.name
 
   user_data = <<-EOL
   #!/bin/bash -xe
@@ -93,6 +94,82 @@ resource "aws_instance" "App_server" {
 
 }
 
+resource "aws_ecr_repository" "Project_ECR" {
+  name                 = "myapp_image"
+  image_tag_mutability = "IMMUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
 
 
+resource "aws_iam_policy" "ec2_ecr_policy" {
+  name        = "Policy_for_EC2_to_access_ECR"
+  path        = "/"
+  description = "EC2 policy to access ECR"
+  policy = jsonencode({
+    Version : "2012-10-17",
+    Statement : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ecr:*",
+          "cloudtrail:LookupEvents"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "iam:CreateServiceLinkedRole"
+        ],
+        "Resource" : "*",
+        "Condition" : {
+          "StringEquals" : {
+            "iam:AWSServiceName" : [
+              "replication.ecr.amazonaws.com"
+            ]
+          }
+        }
+      }
+    ]
+  })
+}
+
+
+
+resource "aws_iam_role" "ec2_ecr_role" {
+  name = "Role_to_be_assumed_by_EC2"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "name" {
+  role       = aws_iam_role.ec2_ecr_role.name
+  policy_arn = aws_iam_policy.ec2_ecr_policy.arn
+}
+
+resource "aws_iam_instance_profile" "profile" {
+  name = "Instance_profile_for_EC2_instance"
+  role = aws_iam_role.ec2_ecr_role.name
+}
+
+output "ECR_arn" {
+  value = aws_ecr_repository.Project_ECR.arn
+}
+
+output "ECR_url" {
+  value = aws_ecr_repository.Project_ECR.repository_url
+}
 
