@@ -103,6 +103,8 @@ resource "aws_ecr_repository" "Project_ECR" {
   }
 }
 
+# Below resource configuration creates an IAM policy, IAM role, attaches policy
+#to the role, and attaches the instance profile to the instance.
 
 resource "aws_iam_policy" "ec2_ecr_policy" {
   name        = "Policy_for_EC2_to_access_ECR"
