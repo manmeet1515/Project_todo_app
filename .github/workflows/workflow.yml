@@ -3,30 +3,40 @@ name: todo-app
 on:
     workflow_dispatch
 
+#env:
+   # AWS_REGION : "us-east-1"
+
 jobs:
     build:
         runs-on: ubuntu-latest
+        permissions:
+            id-token: write
+            contents: read
 
         steps:
             - name: Get code
               uses: actions/checkout@v3  # This is used to fetch the code from the github repository and download it on the runner machine.
-            
-            - name: Setup Docker
-              uses: docker/setup-buildx-action@v3
-
-            - name: Docker build image
-              uses: docker build -t my-web-app .
 
             - name: Configure AWS credentials
               uses: aws-actions/configure-aws-credentials@v4
-              with:
-                AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-                AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-        
-            - name: Amazon ECR "Login" Action for GitHub Actions
+              with: 
+                aws-region: ${{ secrets.AWS_REGION}}
+                role-to-assume: ${{ secrets.AWS_ROLE }}
+                
+            - name: Login to Amazon ECR Public
+              id: login-ecr-public
               uses: aws-actions/amazon-ecr-login@v2
-            
+              with:
+                registry-type: public
+
+            - name: Build and tag docker image
+              env:
+                REGISTRY: ${{ steps.login-ecr-public.outputs.registry }} ## copy the ecr url output here
+                REPOSITORY: myapp_image
+                IMAGE_TAG: ${{ github.sha }}
+              run: |
+                docker build -t my-app -f backend/Dockerfile .
+              
 
            # - name: Push docker image to ECR
             #docker push 969565240312.dkr.ecr.us-east-1.amazonaws.com/test:latest
