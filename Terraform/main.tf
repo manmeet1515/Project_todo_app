@@ -1,23 +1,25 @@
 
 resource "aws_vpc" "Project_vpc" {
-  cidr_block = "10.20.0.0/16"
+  cidr_block = "50.50.0.0/16"
+  tags = {
+    Name = "Project VPC"
+  }
 }
 
 resource "aws_subnet" "publicsubnet" {
   vpc_id                  = aws_vpc.Project_vpc.id
-  cidr_block              = "10.20.10.0/24"
+  cidr_block              = "50.50.10.0/24"
   map_public_ip_on_launch = true
   availability_zone       = "us-east-1a"
 }
 
 resource "aws_internet_gateway" "Pro_IGW" {
   vpc_id = aws_vpc.Project_vpc.id
+  tags = {
+    Name = "ProjectIGW"
+  }
 }
 
-resource "aws_internet_gateway_attachment" "Attachment" {
-  internet_gateway_id = aws_internet_gateway.Pro_IGW.id
-  vpc_id              = aws_vpc.Project_vpc.id
-}
 
 resource "aws_route_table" "Project_RT" {
   vpc_id = aws_vpc.Project_vpc.id
@@ -83,6 +85,9 @@ resource "aws_instance" "App_server" {
   vpc_security_group_ids = [aws_security_group.PR_SG.id]
   key_name               = aws_key_pair.Pro_KP.key_name
   iam_instance_profile   = aws_iam_instance_profile.profile.name
+  tags = {
+    Name = "App-Server"
+  }
 
   user_data = <<-EOL
   #!/bin/bash -xe
@@ -103,7 +108,7 @@ resource "aws_ecr_repository" "Project_ECR" {
   }
 }
 
-# Below resource configuration creates an IAM policy, IAM role, attaches policy
+# The resource declaration below creates an IAM policy, IAM role, attaches policy
 #to the role, and attaches the instance profile to the instance.
 
 resource "aws_iam_policy" "ec2_ecr_policy" {
@@ -166,6 +171,11 @@ resource "aws_iam_instance_profile" "profile" {
   name = "Instance_profile_for_EC2_instance"
   role = aws_iam_role.ec2_ecr_role.name
 }
+
+#The resource declaration below creates an IAM role for the Github Repo
+
+#resource "aws_iam_policy" "GithubAccesstoAWS" {}
+
 
 output "ECR_arn" {
   value = aws_ecr_repository.Project_ECR.arn
