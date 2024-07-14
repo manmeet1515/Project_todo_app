@@ -34,6 +34,7 @@ jobs:
                 IMAGE_TAG: ${{ github.sha }}
               run: |
                   docker build -t my-app -f backend/Dockerfile .
+                  docker tag my-app:latest $REGISTRY/$REPOSITORY:$IMAGE_TAG
                   docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
 
   #          - name: Build and tag docker image
