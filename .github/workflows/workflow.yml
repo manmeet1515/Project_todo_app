@@ -1,14 +1,11 @@
 name: todo-app
 
 on:
-    workflow_dispatch
-
-#env:
-   # AWS_REGION : "us-east-1"
+    workflow_dispatch  # Manual trigger to the workflow
 
 jobs:
     build:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-latest  # runner(server) for our workflow that runs it when triggered.
         permissions:
             id-token: write
             contents: read
@@ -27,7 +24,7 @@ jobs:
               id: login-ecr
               uses: aws-actions/amazon-ecr-login@v2
         
-            - name: Build, tag, and push docker image to Amazon ECR
+            - name: Build and tag docker image and then push it to Amazon ECR
               env:
                 REGISTRY: ${{ steps.login-ecr.outputs.registry }}
                 REPOSITORY: myapp_image
@@ -37,13 +34,6 @@ jobs:
                   docker tag my-app:latest $REGISTRY/$REPOSITORY:$IMAGE_TAG
                   docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
 
-  #          - name: Build and tag docker image
-   #           env:
-   #             REGISTRY: ${{ steps.login-ecr-public.outputs.registry }} ## copy the ecr url output here
-    #            REPOSITORY: myapp_image
-   #             IMAGE_TAG: ${{ github.sha }}
-    #          run: |
-    #            docker build -t my-app -f backend/Dockerfile .
               
 
 
