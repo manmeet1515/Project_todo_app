@@ -172,9 +172,9 @@ resource "aws_iam_instance_profile" "profile" {
   role = aws_iam_role.ec2_ecr_role.name
 }
 
-#The resource declaration below creates an IAM role for the Github Repo
-
-#resource "aws_iam_policy" "GithubAccesstoAWS" {}
+resource "aws_eip" "AppServer_EIP" {
+  instance = aws_instance.App_server.id
+}
 
 
 output "ECR_arn" {
@@ -185,3 +185,6 @@ output "ECR_url" {
   value = aws_ecr_repository.Project_ECR.repository_url
 }
 
+output "aws_eip" {
+  value = aws_instance.App_server.public_ip
+}
